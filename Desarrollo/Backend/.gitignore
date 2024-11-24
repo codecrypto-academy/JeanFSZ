@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 
 geth
+genesis.json
+password.txt
+docker-compose.yml

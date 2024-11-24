@@ -1,0 +1,1 @@
+docker run --rm -v C:\Users\usuario\Desktop\DEV\CodeCrypto\TFM-2.5\Desarrollo\Backend\src\docker\red2\bootnode:/root ethereum/client-go:alltools-v1.13.15 sh -c " bootnode -genkey /root/bootnode.key -writeaddress > /root/bootnode"

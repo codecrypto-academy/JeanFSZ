@@ -1,14 +1,27 @@
 import * as fs from "fs";
 import * as path from "path";
 import { Allocation, NetworkConfig, Node } from "../../interfaces/interfaces";
+import { createCuentaBootnode } from "./account.utils";
+
+/**
+ * Obtiene el path de la red basado en el nombre de la red y la estructura base.
+ *
+ * @param networkId - Identificador único de la red.
+ * @returns Ruta completa al directorio de la red.
+ */
+export function getNetworkPath(networkId: string): string {
+  // Base para las redes dentro de `src`
+  const baseDir = path.join(__dirname, "../../docker");
+  return path.join(baseDir, networkId);
+}
 
 function createBootnodeConfig(ip: string): string {
   return `
   geth-bootnode:
     image: ethereum/client-go:alltools-v1.13.15
-    command: 'bootnode --addr ${ip}:30301 --nodekey=/pepe/bootnode.key'
+    command: 'bootnode --addr ${ip}:30301 --nodekey=/bootnode.key'
     volumes:
-      - ./bootnode.key:/pepe/bootnode.key
+      - ./bootnode.key:/bootnode.key
     networks:
       ethnetwork:
         ipv4_address: ${ip}
@@ -94,9 +107,9 @@ export function generateDockerComposeFile(networkConfig: NetworkConfig) {
   // Generar el archivo genesis.json
   console.info("Generando genesis.json");
   generateGenesisFile(networkConfig);
-
+  createCuentaBootnode(networkConfig.id);
   const dockerComposeContent = createDockerComposeFile(networkConfig);
-  const networkDir = path.join(__dirname, "networks", networkConfig.id);
+  const networkDir = path.join(__dirname, "../../docker", networkConfig.id);
 
   // Asegurarnos de que el directorio exista
   if (!fs.existsSync(networkDir)) {
@@ -134,7 +147,7 @@ function generateGenesisFile(networkConfig: NetworkConfig) {
     };
   });
 
-  const networkDir = path.join(__dirname, "networks", networkConfig.id);
+  const networkDir = getNetworkPath(networkConfig.id);
 
   if (!fs.existsSync(networkDir)) {
     fs.mkdirSync(networkDir, { recursive: true });
