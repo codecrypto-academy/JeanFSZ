@@ -2,6 +2,8 @@ import * as fs from "fs";
 import * as path from "path";
 import { Allocation, NetworkConfig, Node } from "../../interfaces/interfaces";
 import { createCuentaBootnode } from "./account.utils";
+import { generateEnvFile } from "./utils";
+import logger from "../../utils/logger";
 
 /**
  * Obtiene el path de la red basado en el nombre de la red y la estructura base.
@@ -35,8 +37,8 @@ function createNodeConfig(node: Node): string {
   ${node.name}:
     image: ethereum/client-go:v1.13.15
     volumes:
-      - ./${node.name}:/root/.ethereum
       - ./genesis.json:/root/genesis.json
+      - ./${node.name}:/root/.ethereum
       - ./password.txt:/root/.ethereum/password.sec
       - ./keystore:/root/.ethereum/keystore
     depends_on:
@@ -44,15 +46,15 @@ function createNodeConfig(node: Node): string {
     networks:
       ethnetwork:
         ipv4_address: ${node.ip}
-    entrypoint: sh -c 'geth init /root/genesis.json && geth --nat "extip:${node.ip}" --bootnodes="${process.env.BOOTNODE}" --miner.etherbase ${process.env.ETHERBASE} --mine --unlock ${process.env.UNLOCK} --password /root/.ethereum/password.sec'
+    entrypoint: sh -c 'geth init /root/genesis.json && geth --nat "extip:${node.ip}" --bootnodes="\${BOOTNODE}" --miner.etherbase \${ETHERBASE} --mine --unlock \${UNLOCK} --password /root/.ethereum/password.sec'
   `;
     case "rpc":
       return `
   ${node.name}:
     image: ethereum/client-go:v1.13.15
     volumes:
-      - ./${node.name}:/root/.ethereum
       - ./genesis.json:/root/genesis.json
+      - ./${node.name}:/root/.ethereum
     depends_on:
       - geth-bootnode
     networks:
@@ -74,7 +76,7 @@ function createNodeConfig(node: Node): string {
     networks:
       ethnetwork:
         ipv4_address: ${node.ip}
-    entrypoint: sh -c 'geth init /root/genesis.json && geth --bootnodes="${process.env.BOOTNODE}" --nat "extip:${node.ip}" --netrestrict=${process.env.SUBNET}'
+    entrypoint: sh -c 'geth init /root/genesis.json && geth --bootnodes="\${BOOTNODE}" --nat "extip:${node.ip}" --netrestrict=\${SUBNET}'
   `;
     default:
       return "";
@@ -103,11 +105,15 @@ networks:
 }
 
 // Crear y guardar el archivo docker-compose.yml
-export function generateDockerComposeFile(networkConfig: NetworkConfig) {
+export async function generateDockerComposeFile(
+  networkConfig: NetworkConfig
+): Promise<void> {
   // Generar el archivo genesis.json
   console.info("Generando genesis.json");
+  await createCuentaBootnode(networkConfig);
+
   generateGenesisFile(networkConfig);
-  createCuentaBootnode(networkConfig.id);
+
   const dockerComposeContent = createDockerComposeFile(networkConfig);
   const networkDir = path.join(__dirname, "../../docker", networkConfig.id);
 
@@ -123,7 +129,41 @@ export function generateDockerComposeFile(networkConfig: NetworkConfig) {
   );
 }
 
-function generateGenesisFile(networkConfig: NetworkConfig) {
+function prepareAllocations(
+  mainAddress: string,
+  allocConfig: Allocation[]
+): { [address: string]: { balance: string } } {
+  const alloc: { [address: string]: { balance: string } } = {};
+
+  // Incluir el balance predeterminado para la dirección principal si no está ya en la lista
+  alloc[mainAddress] = { balance: "20" };
+
+  // Añadir las direcciones y balances desde la configuración
+  allocConfig.forEach((allocation) => {
+    alloc[allocation.address] = {
+      balance: allocation.amount.toString(10), // Convertir balance a decimal
+    };
+  });
+
+  return alloc;
+}
+
+export function generateGenesisFile(networkConfig: NetworkConfig): void {
+  const networkDir = getNetworkPath(networkConfig.id);
+
+  // Leer la dirección principal desde `address.txt`
+  const addressFilePath = path.join(networkDir, "address.txt");
+  if (!fs.existsSync(addressFilePath)) {
+    throw new Error(
+      `No se encontró el archivo address.txt en ${addressFilePath}`
+    );
+  }
+  const mainAddress = fs.readFileSync(addressFilePath, "utf-8").trim();
+
+  // Preparar el campo `alloc`
+  const allocations = prepareAllocations(mainAddress, networkConfig.alloc);
+
+  // Generar el archivo `genesis.json`
   const genesis = {
     config: {
       chainId: parseInt(networkConfig.chainId),
@@ -134,28 +174,28 @@ function generateGenesisFile(networkConfig: NetworkConfig) {
       byzantiumBlock: 0,
       constantinopleBlock: 0,
       petersburgBlock: 0,
+      clique: {
+        period: 30,
+        epoch: 30000,
+      },
     },
-    alloc: {} as { [address: string]: { balance: string } },
-    difficulty: "0x400",
-    gasLimit: "0x8000000",
+    difficulty: "1",
+    gasLimit: "8000000",
+    extradata: `0x0000000000000000000000000000000000000000000000000000000000000000${mainAddress.replace(
+      /^0x/,
+      ""
+    )}000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000`,
+    alloc: allocations,
   };
 
-  // Asignar los balances en `alloc` basado en `networkConfig.alloc`
-  networkConfig.alloc.forEach((allocation: Allocation) => {
-    genesis.alloc[allocation.address] = {
-      balance: `0x${allocation.amount.toString(16)}`, // Convertir a hexadecimal
-    };
-  });
-
-  const networkDir = getNetworkPath(networkConfig.id);
-
+  // Crear el directorio de red si no existe
   if (!fs.existsSync(networkDir)) {
     fs.mkdirSync(networkDir, { recursive: true });
   }
 
-  // Escribir el archivo genesis.json en el directorio de la red
-  fs.writeFileSync(
-    path.join(networkDir, "genesis.json"),
-    JSON.stringify(genesis, null, 2)
-  );
+  // Escribir el archivo `genesis.json`
+  const genesisPath = path.join(networkDir, "genesis.json");
+  fs.writeFileSync(genesisPath, JSON.stringify(genesis, null, 2), "utf-8");
+
+  console.info(`Archivo genesis.json creado en: ${genesisPath}`);
 }

@@ -6,7 +6,7 @@
   "scripts": {
     "build": "npx tsc",
     "start": "node dist/index.js",
-    "dev": "nodemon src/index.ts --ignore 'src/docker/**/*'"
+    "dev": "nodemon --ext ts src/index.ts --ignore 'src/docker/**/*'"
   },
   "keywords": [],
   "author": "",
