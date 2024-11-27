@@ -150,7 +150,7 @@ const NetworkTable: React.FC = () => {
     <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
       {/* Botón para redirigir a la página de crear red */}
       <button
-        onClick={() => navigate('/create')}
+        onClick={() => navigate('create')}
         className="mb-4 px-4 py-2 text-white bg-blue-500 hover:bg-blue-700 rounded-lg"
       >
         Crear Nueva Red

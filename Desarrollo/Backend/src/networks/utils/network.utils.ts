@@ -48,6 +48,7 @@ function createNodeConfig(node: Node): string {
     entrypoint: sh -c 'geth init /root/genesis.json && geth --nat "extip:${node.ip}" --bootnodes="\${BOOTNODE}" --miner.etherbase \${ETHERBASE} --mine --unlock \${UNLOCK} --password /root/.ethereum/password.sec'
   `;
     case "rpc":
+      const rpcPort = node.port || 8545;
       return `
   ${node.name}:
     image: ethereum/client-go:v1.13.15

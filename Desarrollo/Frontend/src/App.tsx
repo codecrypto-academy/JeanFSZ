@@ -10,7 +10,7 @@ export default function App() {
     <Provider store={getStore()}>
       <BrowserRouter>
         <Header />
-        <div className="bg-gray-300 p-5 h-screen">
+        <div className="bg-gray-300 p-5 mb-7 min-h-screen">
           <AppRoutes />
         </div>
         <Footer/>

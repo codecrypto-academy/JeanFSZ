@@ -48,7 +48,8 @@ const Header = () => {
     const handleAccountsChanged = (accounts: string[]) => {
       if (accounts.length > 0) {
         dispatch(getAccount()); // Obtener la cuenta actualizada
-        dispatch(getBalance(accounts[0])); // Obtener el balance de la nueva cuenta
+        dispatch(getBalance(accounts[0]));
+        dispatch(authenticate(accounts[0])); // Obtener el balance de la nueva cuenta
       } else {
         console.log('No se encontró ninguna cuenta.'); // Manejo de caso en que no hay cuentas
       }

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import axios from "axios";
-import { Button } from "./button";
+import { Button } from "./ui/button";
 
 const AddressVerifier = () => {
   const [address, setAddress] = useState("");

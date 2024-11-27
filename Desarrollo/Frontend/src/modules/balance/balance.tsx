@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import AddressVerifier from "@/components/ui/address-verifier";
 import { RootState } from "@/shared/store";
 import { getBalance } from "@/shared/reducer/authentication.reducer";
+import AddressVerifier from "@/components/address-verifier";
 
 const Balance = () => {
   const dispatch = useDispatch();

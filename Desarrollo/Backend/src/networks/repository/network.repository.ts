@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import logger from "../../utils/logger";
 
+
 // Ruta del archivo JSON que simula la base de datos
 const filePath = path.join(__dirname, "networks.json");
 
@@ -29,6 +30,7 @@ const writeNetworksToFile = (networks: NetworkConfig[]) => {
 export const networkRepository = {
   addNetwork: (network: NetworkConfig) => {
     const networks = readNetworksFromFile();
+    
     network.up = false;
     networks.push(network);
     writeNetworksToFile(networks);
@@ -78,5 +80,22 @@ export const networkRepository = {
     });
 
     return updatedNetwork;
+  },
+
+  getAllPortsFromRpcNodes: () => {
+    // Leer todas las redes
+    const networks = readNetworksFromFile();
+
+    // Filtrar nodos de tipo "rpc" y extraer sus puertos
+    const rpcPorts = networks.flatMap((network: NetworkConfig) =>
+      network.nodos
+        .filter((node) => node.type === "rpc") // Solo nodos de tipo "rpc"
+        .map((rpcNode) => rpcNode.port) 
+    );
+
+    // Log para depuración
+    logger.info("Extracted RPC node ports", { rpcPorts });
+
+    return rpcPorts; // Retornar la lista de puertos
   },
 };

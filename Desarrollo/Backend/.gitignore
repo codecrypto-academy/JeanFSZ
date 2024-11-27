@@ -28,3 +28,4 @@ genesis.json
 password.txt
 docker-compose.yml
 docker
+networks.json

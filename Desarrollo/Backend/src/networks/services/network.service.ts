@@ -6,6 +6,7 @@ import {
   generateDockerComposeFile,
   getNetworkPath,
 } from "../utils/network.utils";
+import { assignPorts } from "../utils/node.utils";
 
 export const networkService = {
   createNetwork: (networkConfig: NetworkConfig) => {
@@ -19,7 +20,7 @@ export const networkService = {
     }
 
     // Agregar la red al repositorio
-    networkRepository.addNetwork(networkConfig);
+    networkRepository.addNetwork(assignPorts(networkConfig));
 
     // Generar el archivo docker-compose.yml
     generateDockerComposeFile(networkConfig);

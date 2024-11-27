@@ -2,7 +2,7 @@ export interface Node {
   type: "rpc" | "miner" | "normal";
   name: string;
   ip: string;
-  port: string;
+  port: number;
 }
 
 export interface Allocation {
