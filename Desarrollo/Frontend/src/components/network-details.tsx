@@ -1,3 +1,4 @@
+import React from 'react';
 import { NetworkConfig } from '@/shared/interfaces/interfaces';
 
 interface NetworkDetailProps {
@@ -39,6 +40,27 @@ const NetworkDetail: React.FC<NetworkDetailProps> = ({ network }) => {
         <div className="flex justify-between">
           <span className="font-semibold text-gray-600">Número de Nodos:</span>
           <span className="text-gray-800">{network.nodos.length}</span>
+        </div>
+      </div>
+
+      {/* Información de las Asignaciones (Allocations) */}
+      <div className="space-y-4">
+        <h3 className="text-xl font-semibold text-gray-800">Asignaciones:</h3>
+        <div>
+          {network.alloc.length > 0 ? (
+            <ul className="space-y-2">
+              {network.alloc.map((allocation, index) => (
+                <li key={index} className="flex justify-between">
+                  <span className="font-semibold text-gray-600">Dirección:</span>
+                  <span className="text-gray-800">{allocation.address}</span>
+                  <span className="font-semibold text-gray-600">Monto:</span>
+                  <span className="text-gray-800">{allocation.amount}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-gray-600">No hay asignaciones para esta red.</p>
+          )}
         </div>
       </div>
     </div>

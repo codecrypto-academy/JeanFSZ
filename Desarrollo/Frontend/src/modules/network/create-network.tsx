@@ -4,8 +4,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { FaTrash } from "react-icons/fa";
 import { NetworkConfig } from "@/shared/interfaces/interfaces";
 import axios from "axios";
-
-
+import { useNavigate } from "react-router-dom";
 
 const validationSchema = Yup.object({
   id: Yup.string().required("El ID es obligatorio"),
@@ -32,14 +31,19 @@ const validationSchema = Yup.object({
           .required("El tipo de nodo es obligatorio"),
         name: Yup.string().required("El nombre del nodo es obligatorio"),
         ip: Yup.string().required("La IP es obligatoria"),
+        port: Yup.number().required("El puerto es obligatorio"), // Add this line
       })
     )
     .min(1, "Debe haber al menos un nodo") // Asegura que haya al menos un nodo
     .required("Los nodos son obligatorios"),
-  up: Yup.boolean().required("El estado de la red es obligatorio"),
+  up: Yup.boolean()
+    .required("El estado de la red es obligatorio")
+    .default(false),
 });
 
 const DynamicForm = () => {
+  const navigate = useNavigate();
+
   const {
     control,
     handleSubmit,
@@ -66,28 +70,30 @@ const DynamicForm = () => {
     name: "alloc",
   });
 
-    // Función que llama al servicio para crear la red
-    const createNetwork = async (data: NetworkConfig) => {
-        try {
-          const response = await axios.post(
-            "http://localhost:3000/api/create-network", // URL de la API
-            data, // Los datos del formulario
-            {
-              headers: {
-                "Content-Type": "application/json", // Tipo de contenido
-              },
-            }
-          );
-          console.log("Red creada exitosamente", response.data);
-        } catch (error) {
-          console.error("Error al crear la red", error);
+  // Función que llama al servicio para crear la red
+  const createNetwork = async (data: NetworkConfig) => {
+
+    try {
+      const response = await axios.post(
+        "http://localhost:3000/api/create-network", // URL de la API
+        data, // Los datos del formulario
+        {
+          headers: {
+            "Content-Type": "application/json", // Tipo de contenido
+          },
         }
-      };
-    
-      const onSubmit = (data: NetworkConfig) => {
-        console.log("Datos del formulario:", data);
-        createNetwork(data); // Llama al servicio de creación de red
-      };
+      );
+      console.log("Red creada exitosamente", response.data);
+      navigate('/networks');
+    } catch (error) {
+      console.error("Error al crear la red", error);
+    }
+  };
+
+  const onSubmit = (data: NetworkConfig) => {
+    console.log("Datos del formulario:", data);
+    createNetwork(data); // Llama al servicio de creación de red
+  };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
@@ -183,25 +189,6 @@ const DynamicForm = () => {
               )}
             </div>
           </div>
-
-          {/* Estado de la Red */}
-          <div className="flex items-center">
-            <label className="mr-2 text-sm font-medium text-gray-700">
-              Red Activa
-            </label>
-            <Controller
-              name="up"
-              control={control}
-              render={({ field }) => (
-                <input
-                  type="checkbox"
-                  checked={field.value}
-                  onChange={field.onChange}
-                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-                />
-              )}
-            />
-          </div>
         </div>
 
         {/* Tarjeta de Nodos */}
@@ -285,7 +272,6 @@ const DynamicForm = () => {
                   </p>
                 )}
               </div>
-
 
               <div className="col-span-1 flex items-center justify-center pt-7">
                 <button

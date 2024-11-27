@@ -27,6 +27,12 @@ export const networkService = {
 
     return networkConfig;
   },
+
+  upNetworks: () => {
+    logger.info("Service: Fetching all networks that are up");
+    const allNetworks = networkRepository.getAllNetworks();
+    return allNetworks.filter((network: NetworkConfig) => network.up);
+  },
   getAllNetworks: () => networkRepository.getAllNetworks(),
   getNetworkById: (id: string) => networkRepository.getNetworkById(id),
   updateNetwork: (networkId: string, updatedConfig: Partial<NetworkConfig>) => {
@@ -67,8 +73,6 @@ export const networkService = {
     if (!network) {
       throw new Error("Network not found.");
     }
-
-    
 
     const networkPath = getNetworkPath(networkId); // Obtén la ruta de la red específica
 
@@ -149,5 +153,21 @@ export const networkService = {
         }
       );
     });
+  },
+  deleteNetwork: async (networkId: string) => {
+    try {
+      // Intentar eliminar la red desde el repositorio
+      const result = await networkRepository.deleteNetwork(networkId);
+
+      if (!result) {
+        throw new Error("Network not found");
+      }
+
+      logger.info("Network deleted successfully", { networkId });
+      return result;
+    } catch (error) {
+      logger.error("Error deleting network", { error });
+      throw new Error("Error deleting network");
+    }
   },
 };

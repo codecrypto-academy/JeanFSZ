@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { ethers } from "ethers";
+import { NetworkConfig } from "../interfaces/interfaces";
 
 const AUTH_TOKEN_KEY = "jhi-authenticationToken";
 
@@ -12,6 +13,7 @@ export const initialState = {
   errorMessage: null as string | null,
   sessionHasBeenFetched: false,
   balance: null as string | null,
+  network: null as NetworkConfig | null,
 };
 
 export type AuthenticationState = Readonly<typeof initialState>;
@@ -47,6 +49,14 @@ export const getAccount = createAsyncThunk(
     } catch (error) {
       throw new Error("Error obteniendo la cuenta de MetaMask");
     }
+  }
+);
+
+export const setNetwork = createAsyncThunk(
+  "authentication/setNetwork",
+  async (network: NetworkConfig) => {
+    // Aquí puedes agregar lógica para validar la red o realizar acciones adicionales
+    return network; // Devuelve el objeto NetworkConfig
   }
 );
 
@@ -138,8 +148,15 @@ export const AuthenticationSlice = createSlice({
       .addCase(getBalance.rejected, (state, action) => {
         state.loading = false;
         state.errorMessage = action.error.message ?? null;
+      })
+      // Otros casos
+      .addCase(setNetwork.fulfilled, (state, action) => {
+        state.network = action.payload; // Guardamos la red seleccionada
+      })
+      .addCase(setNetwork.rejected, (state, action) => {
+        state.errorMessage =
+          action.error.message ?? "Error configurando la red";
       });
-
   },
 });
 

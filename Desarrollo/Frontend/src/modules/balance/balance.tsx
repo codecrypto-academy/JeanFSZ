@@ -1,12 +1,12 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { RootState } from "@/shared/store";
+import { AppDispatch, RootState } from "@/shared/store";
 import { getBalance } from "@/shared/reducer/authentication.reducer";
 import AddressVerifier from "@/components/address-verifier";
 
 const Balance = () => {
-  const dispatch = useDispatch();
-  const { account, balance, loading } = useSelector(
+  const dispatch: AppDispatch = useDispatch();
+  const { account, balance, loading, network } = useSelector(
     (state: RootState) => state.authentication
   );
 
@@ -20,6 +20,18 @@ const Balance = () => {
     <div className="bg-white/75 dark:bg-gray-900 space-y-4 w-1/2 mx-auto rounded-lg shadow-lg p-6">
       <div className="rounded-md bg-slate-800 py-0.5 px-2.5 border border-transparent text-sm text-white transition-all shadow-sm">
         Your Balance: {loading ? "Loading..." : `${balance} ETH`}
+      </div>
+      <div className="mt-4 rounded-md bg-slate-800 py-0.5 px-2.5 border border-transparent text-sm text-white transition-all shadow-sm">
+        <h3>Your Network</h3>
+        {network ? (
+          <div>
+            <p>Network ID: {network.id}</p>
+            <p>Chain ID: {network.chainId}</p>
+            <p>Subnet: {network.subnet}</p>
+          </div>
+        ) : (
+          <p>No network set</p>
+        )}
       </div>
       <div className="mt-8">
         <AddressVerifier />

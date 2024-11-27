@@ -56,7 +56,7 @@ const NodeTable: React.FC<NodeTableProps> = ({ nodes }) => {
                 {/* Mostrar URL solo si el tipo de nodo es 'rpc' */}
                 {node.type === 'rpc' ? (
                   <a
-                    href={`http://${node.ip}:${node.port}`}
+                    href={`http://localhost:${node.port}`}
                     className="text-blue-500 hover:text-blue-700"
                     target="_blank"
                     rel="noopener noreferrer"

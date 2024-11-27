@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useDispatch, useSelector } from "react-redux";
 import { NavLink } from "react-router-dom";
@@ -7,15 +7,10 @@ import {
   getAccount,
   getBalance,
   logout,
+  setNetwork,
 } from "./reducer/authentication.reducer";
 import { AppDispatch, RootState } from "./store";
-
-// Opciones de red
-const networkOptions = [
-  { id: "mainnet", name: "Ethereum Mainnet" },
-  { id: "goerli", name: "Goerli Testnet" },
-  { id: "rinkeby", name: "Rinkeby Testnet" },
-];
+import { NetworkConfig } from "./interfaces/interfaces";
 
 const Spinner = () => (
   <div role="status">
@@ -44,6 +39,29 @@ const Header = () => {
   const { isAuthenticated, loading } = useSelector(
     (state: RootState) => state.authentication
   );
+
+  // Estado para las opciones de red
+  const [networkOptions, setNetworkOptions] = useState<NetworkConfig[]>([]);
+
+  useEffect(() => {
+    // Función para obtener redes desde la API
+    const fetchNetworks = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:3000/api/networks/filter/up"
+        ); // Cambia la URL según corresponda
+        const networks = await response.json();
+        setNetworkOptions(networks);
+        if(networks.length === 1){
+          setNetwork(networks[0]);
+        }
+      } catch (error) {
+        console.error("Error al obtener las redes:", error);
+      }
+    };
+
+    fetchNetworks();
+  }, []);
 
   useEffect(() => {
     const handleAccountsChanged = (accounts: string[]) => {
@@ -84,9 +102,14 @@ const Header = () => {
   };
 
   const handleNetworkChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedNetwork = e.target.value;
-    console.log("Cambiando red a:", selectedNetwork);
-    // Aquí puedes incluir lógica para cambiar la red en MetaMask
+    const selectedNetworkId = e.target.value;
+    const selectedNetwork = networkOptions.find(
+      (network) => network.id === selectedNetworkId
+    );
+    console.log("Red seleccionada:", e);
+    if (selectedNetwork) {
+      dispatch(setNetwork(selectedNetwork)); // Dispatch con el objeto NetworkConfig
+    }
   };
 
   return (
@@ -148,12 +171,15 @@ const Header = () => {
             </li>
             <li>
               <select
-                onChange={handleNetworkChange}
+                onChange={(e) => {
+                  console.log("onChange triggered", e.target.value); // Verifica si se dispara el evento
+                  handleNetworkChange(e); // Llamar a la función para manejar el cambio
+                }}
                 className="p-2 border rounded bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
               >
                 {networkOptions.map((network) => (
                   <option key={network.id} value={network.id}>
-                    {network.name}
+                    {network.chainId}
                   </option>
                 ))}
               </select>

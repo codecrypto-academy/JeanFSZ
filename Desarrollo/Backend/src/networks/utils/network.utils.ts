@@ -2,7 +2,8 @@ import * as fs from "fs";
 import * as path from "path";
 import { Allocation, NetworkConfig, Node } from "../../interfaces/interfaces";
 import { createCuentaBootnode } from "./account.utils";
-
+import logger from "../../utils/logger";
+import { execSync } from "child_process";
 
 /**
  * Obtiene el path de la red basado en el nombre de la red y la estructura base.
@@ -16,7 +17,7 @@ export function getNetworkPath(networkId: string): string {
   return path.join(baseDir, networkId);
 }
 
-function createBootnodeConfig(ip: string): string {
+function createBootnodeConfig(ip: string, networkName: string): string {
   return `
   geth-bootnode:
     image: ethereum/client-go:alltools-v1.13.15
@@ -24,12 +25,12 @@ function createBootnodeConfig(ip: string): string {
     volumes:
       - ./bootnode.key:/bootnode.key
     networks:
-      ethnetwork:
+     ${networkName}:
         ipv4_address: ${ip}
   `;
 }
 
-function createNodeConfig(node: Node): string {
+function createNodeConfig(node: Node, networkName: string): string {
   switch (node.type) {
     case "miner":
       return `
@@ -43,12 +44,11 @@ function createNodeConfig(node: Node): string {
     depends_on:
       - geth-bootnode
     networks:
-      ethnetwork:
+      ${networkName}:
         ipv4_address: ${node.ip}
     entrypoint: sh -c 'geth init /root/genesis.json && geth --nat "extip:${node.ip}" --bootnodes="\${BOOTNODE}" --miner.etherbase \${ETHERBASE} --mine --unlock \${UNLOCK} --password /root/.ethereum/password.sec'
   `;
     case "rpc":
-      const rpcPort = node.port || 8545;
       return `
   ${node.name}:
     image: ethereum/client-go:v1.13.15
@@ -58,7 +58,7 @@ function createNodeConfig(node: Node): string {
     depends_on:
       - geth-bootnode
     networks:
-      ethnetwork:
+      ${networkName}:
         ipv4_address: ${node.ip}
     ports:
       - "${node.port}:8545"
@@ -74,7 +74,8 @@ function createNodeConfig(node: Node): string {
     depends_on:
       - geth-bootnode
     networks:
-      ethnetwork:
+      ${networkName}:
+        name: ${networkName}
         ipv4_address: ${node.ip}
     entrypoint: sh -c 'geth init /root/genesis.json && geth --bootnodes="\${BOOTNODE}" --nat "extip:${node.ip}" --netrestrict=\${SUBNET}'
   `;
@@ -84,9 +85,16 @@ function createNodeConfig(node: Node): string {
 }
 
 function createDockerComposeFile(networkConfig: NetworkConfig): string {
-  const bootnodeConfig = createBootnodeConfig(networkConfig.ipBootnode);
+  const networkName = `${networkConfig.id}_ethnetwork`;
+  logger.info(`Creating docker-compose.yml for network ${networkName}`);
+
+
+  const bootnodeConfig = createBootnodeConfig(
+    networkConfig.ipBootnode,
+    networkName
+  );
   const nodesConfig = networkConfig.nodos
-    .map((node) => createNodeConfig(node))
+    .map((node) => createNodeConfig(node, networkName))
     .join("\n");
 
   return `
@@ -95,7 +103,7 @@ services:
   ${bootnodeConfig}
   ${nodesConfig}
 networks:
-  ethnetwork:
+  ${networkName}:
     driver: bridge
     ipam:
       driver: default

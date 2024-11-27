@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { networkService } from "../services/network.service";
 import logger from "../../utils/logger";
 
@@ -44,6 +44,16 @@ export const networkController = {
       }
     } catch (error) {
       logger.error("Error fetching network by ID", { error });
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  },
+  upNetworks: (req: Request, res: Response) => {
+    try {
+      logger.info("Controller: Fetching networks that are up");
+      const networks = networkService.upNetworks();
+      res.status(200).json(networks);
+    } catch (error) {
+      logger.error("Controller: Error fetching networks that are up", { error });
       res.status(500).json({ error: "Internal Server Error" });
     }
   },
@@ -94,6 +104,23 @@ export const networkController = {
         networkId,
       });
       res.status(500).json({ error: "Error fetching network status" });
+    }
+  },
+  deleteNetwork: async (req: Request, res: Response, next: NextFunction) => {
+    const { id } = req.params;
+  
+    try {
+      // Call the service to delete the network
+      const result = await networkService.deleteNetwork(id);
+  
+      if (!result) {
+        return res.status(404).json({ message: "Network not found" });
+      }
+  
+      return res.status(200).json({ message: "Network deleted successfully" });
+    } catch (error) {
+      logger.error("Error deleting network", { error });
+      return res.status(500).json({ message: "Internal server error while deleting the network" });
     }
   },
 };
