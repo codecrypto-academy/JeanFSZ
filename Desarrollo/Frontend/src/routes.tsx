@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import Loadable from "react-loadable";
 import NetworkRoutes from "./modules/network";
 
@@ -26,6 +26,7 @@ const AppRoutes = () => {
       <Route path="balance/*" element={<BalanceRoutes />} />
       <Route path="networks/*" element={<NetworkRoutes />} />
       {/* Rutas anidadas para Balance */}
+      <Route path="/" element={<Navigate to="/networks" />} />
       <Route path="*" element={<NotFound />} />
       {/* Ruta que captura cualquier otra ruta */}
     </Routes>
