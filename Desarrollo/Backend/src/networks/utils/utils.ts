@@ -12,7 +12,7 @@ function createEnv(networkConfig: NetworkConfig): string {
   let bootnode = `enode://${fs  
     .readFileSync(path.join(networkDir, "bootnode.txt"))
     .toString()
-    .trim()}@${networkConfig.ipBootnode}:30301?discport=0`;
+    .trim()}@${networkConfig.ipBootnode}:0?discport=30301`;
   bootnode = bootnode.replace("\n", "");
   // Leer la dirección etherbase del archivo address.txt
   const etherbase = fs

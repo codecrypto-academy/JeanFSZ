@@ -2,8 +2,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { Allocation, NetworkConfig, Node } from "../../interfaces/interfaces";
 import { createCuentaBootnode } from "./account.utils";
-import { generateEnvFile } from "./utils";
-import logger from "../../utils/logger";
+
 
 /**
  * Obtiene el path de la red basado en el nombre de la red y la estructura base.
@@ -62,7 +61,7 @@ function createNodeConfig(node: Node): string {
         ipv4_address: ${node.ip}
     ports:
       - "${node.port}:8545"
-    entrypoint: sh -c 'geth init /root/genesis.json && geth --bootnodes="${process.env.BOOTNODE}" --nat "extip:${node.ip}" --netrestrict=${process.env.SUBNET} --http --http.addr "0.0.0.0" --http.port 8545 --http.corsdomain "*" --http.api "admin,eth,debug,miner,net,txpool,personal,web3"'
+    entrypoint: sh -c 'geth init /root/genesis.json && geth --bootnodes="\${BOOTNODE}" --nat "extip:${node.ip}" --netrestrict=\${SUBNET} --http --http.addr "0.0.0.0" --http.port 8545 --http.corsdomain "*" --http.api "admin,eth,debug,miner,net,txpool,personal,web3"'
   `;
     case "normal":
       return `
