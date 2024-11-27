@@ -29,6 +29,7 @@ const writeNetworksToFile = (networks: NetworkConfig[]) => {
 export const networkRepository = {
   addNetwork: (network: NetworkConfig) => {
     const networks = readNetworksFromFile();
+    network.up = false;
     networks.push(network);
     writeNetworksToFile(networks);
   },
@@ -38,7 +39,44 @@ export const networkRepository = {
   },
 
   getNetworkById: (id: string): NetworkConfig | undefined => {
-    const networks = readNetworksFromFile(); 
-    return networks.find((n: NetworkConfig) => n.id === id); 
+    const networks = readNetworksFromFile();
+    return networks.find((n: NetworkConfig) => n.id === id);
+  },
+  updateNetwork: (networkId: string, updatedConfig: Partial<NetworkConfig>) => {
+    // Leer todas las redes desde el archivo
+    const networks = readNetworksFromFile();
+
+    // Buscar la red que coincide con el ID
+    const index = networks.findIndex(
+      (network: NetworkConfig) => network.id === networkId
+    );
+    if (index === -1) {
+      throw new Error(`Network with ID ${networkId} not found.`);
+    }
+
+    // Actualizar los campos de la red encontrada
+    const updatedNetwork = {
+      ...networks[index], // Mantener los valores actuales
+      ...updatedConfig, // Sobrescribir con los valores actualizados
+    };
+
+    // Validar los cambios si es necesario (opcional)
+    if (updatedConfig.nodos && updatedConfig.nodos.length === 0) {
+      throw new Error("Network must have at least one node.");
+    }
+
+    // Guardar los cambios en el array
+    networks[index] = updatedNetwork;
+
+    // Escribir los cambios de vuelta al archivo
+    writeNetworksToFile(networks);
+
+    // Log para indicar éxito
+    logger.info("Network updated successfully in repository", {
+      networkId,
+      updatedConfig,
+    });
+
+    return updatedNetwork;
   },
 };

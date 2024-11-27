@@ -1,9 +1,7 @@
 import { Request, Response } from "express";
 import { networkService } from "../services/network.service";
 import logger from "../../utils/logger";
-import { exec } from "child_process";
-import { networkRepository } from "../repository/network.repository";
-import { getNetworkPath } from "../utils/network.utils";
+
 
 export const networkController = {
   createNetwork: (req: Request, res: Response) => {
