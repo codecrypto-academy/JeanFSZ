@@ -1,3 +1,4 @@
+import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useDispatch, useSelector } from "react-redux";
 import { NavLink } from "react-router-dom";
@@ -8,9 +9,14 @@ import {
   logout,
 } from "./reducer/authentication.reducer";
 import { AppDispatch, RootState } from "./store";
-import { useEffect } from "react";
 
-// Componente de Spinner
+// Opciones de red
+const networkOptions = [
+  { id: "mainnet", name: "Ethereum Mainnet" },
+  { id: "goerli", name: "Goerli Testnet" },
+  { id: "rinkeby", name: "Rinkeby Testnet" },
+];
+
 const Spinner = () => (
   <div role="status">
     <svg
@@ -35,57 +41,52 @@ const Spinner = () => (
 
 const Header = () => {
   const dispatch = useDispatch<AppDispatch>();
-
-  // Obtener el estado de autenticación del store
-  const {
-    isAuthenticated,
-    loading,
-
-  } = useSelector((state: RootState) => state.authentication);
+  const { isAuthenticated, loading } = useSelector(
+    (state: RootState) => state.authentication
+  );
 
   useEffect(() => {
-    // Función para manejar cambios en la cuenta
     const handleAccountsChanged = (accounts: string[]) => {
       if (accounts.length > 0) {
-        dispatch(getAccount()); // Obtener la cuenta actualizada
+        dispatch(getAccount());
         dispatch(getBalance(accounts[0]));
-        dispatch(authenticate(accounts[0])); // Obtener el balance de la nueva cuenta
+        dispatch(authenticate(accounts[0]));
       } else {
-        console.log('No se encontró ninguna cuenta.'); // Manejo de caso en que no hay cuentas
+        console.log("No se encontró ninguna cuenta.");
       }
     };
 
-    // Escuchar cambios en la cuenta de MetaMask
     if ((window as any).ethereum) {
-      (window as any).ethereum.on('accountsChanged', handleAccountsChanged);
+      (window as any).ethereum.on("accountsChanged", handleAccountsChanged);
     }
 
-    // Cleanup para evitar fugas de memoria
     return () => {
       if ((window as any).ethereum) {
-        (window as any).ethereum.removeListener('accountsChanged', handleAccountsChanged);
+        (window as any).ethereum.removeListener(
+          "accountsChanged",
+          handleAccountsChanged
+        );
       }
     };
   }, [dispatch]);
 
-
-
-  // Manejar el inicio de sesión
   const handleLogin = async () => {
     try {
-      // Llamamos a getAccount para obtener la cuenta de MetaMask (que a su vez usa getAccountFromMetaMask)
       const accountResponse = await dispatch(getAccount()).unwrap();
-
-      // Autenticamos la cuenta firmando un mensaje con el account obtenido
       await dispatch(authenticate(accountResponse));
     } catch (error) {
       console.error("Error en el inicio de sesión con MetaMask:", error);
     }
   };
 
-  // Manejar el cierre de sesión
   const handleLogout = () => {
     dispatch(logout());
+  };
+
+  const handleNetworkChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedNetwork = e.target.value;
+    console.log("Cambiando red a:", selectedNetwork);
+    // Aquí puedes incluir lógica para cambiar la red en MetaMask
   };
 
   return (
@@ -101,18 +102,9 @@ const Header = () => {
             Build Private Ethereum Networks
           </span>
         </a>
-        <button
-          data-collapse-toggle="navbar-default"
-          type="button"
-          className="inline-flex items-center p-2 w-10 h-10 justify-center text-sm text-gray-500 rounded-lg md:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600"
-          aria-controls="navbar-default"
-          aria-expanded="false"
-        >
-          <span className="sr-only">Open main menu</span>
-        </button>
         <div className="hidden w-full md:block md:w-auto" id="navbar-default">
           <ul className="font-medium flex flex-col p-4 md:p-0 mt-4 border border-gray-100 rounded-lg bg-gray-50 md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:border-0 md:bg-white dark:bg-gray-800 md:dark:bg-gray-900 dark:border-gray-700 items-center">
-          <li>
+            <li>
               <NavLink
                 to="/networks"
                 className={({ isActive }) =>
@@ -154,6 +146,18 @@ const Header = () => {
                 Balance
               </NavLink>
             </li>
+            <li>
+              <select
+                onChange={handleNetworkChange}
+                className="p-2 border rounded bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+              >
+                {networkOptions.map((network) => (
+                  <option key={network.id} value={network.id}>
+                    {network.name}
+                  </option>
+                ))}
+              </select>
+            </li>
             <li className="flex items-center">
               {!isAuthenticated ? (
                 <Button onClick={handleLogin} disabled={loading}>
@@ -162,7 +166,7 @@ const Header = () => {
                       <Spinner />
                       <img
                         src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/MetaMask_Fox.svg/2048px-MetaMask_Fox.svg.png"
-                        className="h-6 mr-2" // Ajusta el tamaño como sea necesario
+                        className="h-6 mr-2"
                         alt="MetaMask Icon"
                       />
                     </>
@@ -170,7 +174,7 @@ const Header = () => {
                     <>
                       <img
                         src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/MetaMask_Fox.svg/2048px-MetaMask_Fox.svg.png"
-                        className="h-6 mr-2" // Ajusta el tamaño como sea necesario
+                        className="h-6 mr-2"
                         alt="MetaMask Icon"
                       />
                       Connect
@@ -181,7 +185,7 @@ const Header = () => {
                 <Button onClick={handleLogout}>
                   <img
                     src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/MetaMask_Fox.svg/2048px-MetaMask_Fox.svg.png"
-                    className="h-6 mr-2" // Ajusta el tamaño como sea necesario
+                    className="h-6 mr-2"
                     alt="MetaMask Icon"
                   />
                   Logout

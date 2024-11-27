@@ -13,4 +13,6 @@ router.get('/networks/:id', networkController.getNetworkById);  // Ruta para obt
 router.post('/networks/:id/up', networkController.upNetwork); // Levantar la red
 router.post('/networks/:id/down', networkController.downNetwork); // Bajar la red
 router.get('/networks/:id/status', networkController.getNetworkStatus); // Obtener el estado
+router.get('/networks/up', networkController.getActiveNetworks); // Ruta para obtener redes levantadas
+
 export default router;
