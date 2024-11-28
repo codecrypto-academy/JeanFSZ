@@ -15,5 +15,6 @@ router.post('/networks/:id/down', networkController.downNetwork); // Bajar la re
 router.get('/networks/:id/status', networkController.getNetworkStatus); // Obtener el estado
 router.get('/networks/filter/up', networkController.upNetworks); // Ruta para obtener redes levantadas
 
+
 // Nueva ruta para agregar una transacción a una red
 export default router;

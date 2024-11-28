@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { networkService } from "../services/network.service";
 import logger from "../../utils/logger";
-
+import axios from "axios";
 
 export const networkController = {
   createNetwork: (req: Request, res: Response) => {
@@ -53,7 +53,9 @@ export const networkController = {
       const networks = networkService.upNetworks();
       res.status(200).json(networks);
     } catch (error) {
-      logger.error("Controller: Error fetching networks that are up", { error });
+      logger.error("Controller: Error fetching networks that are up", {
+        error,
+      });
       res.status(500).json({ error: "Internal Server Error" });
     }
   },
@@ -108,19 +110,87 @@ export const networkController = {
   },
   deleteNetwork: async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params;
-  
+
     try {
       // Call the service to delete the network
       const result = await networkService.deleteNetwork(id);
-  
+
       if (!result) {
         return res.status(404).json({ message: "Network not found" });
       }
-  
+
       return res.status(200).json({ message: "Network deleted successfully" });
     } catch (error) {
       logger.error("Error deleting network", { error });
-      return res.status(500).json({ message: "Internal server error while deleting the network" });
+      return res
+        .status(500)
+        .json({ message: "Internal server error while deleting the network" });
+    }
+  },
+
+  addTransactionToNetwork: async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => {
+    const { networkId } = req.params; // Obtener el networkId de los parámetros de la URL
+    const { to, value } = req.body; // Obtener 'to' y 'value' del cuerpo de la solicitud
+
+    try {
+      // Validar que 'to' y 'value' están presentes
+      if (!to || !value) {
+        return res
+          .status(400)
+          .json({
+            error:
+              'Faltan parámetros "to" o "value" en el cuerpo de la solicitud',
+          });
+      }
+
+      // Simulando la búsqueda de la red por su ID (esto dependerá de cómo gestionas tus redes)
+      const network = await networkService.getNetworkById(networkId); // Método hipotético para obtener la red
+
+      if (!network) {
+        return res.status(404).json({ error: "Red no encontrada" });
+      }
+
+      // Buscar el nodo RPC en los nodos de la red
+      const rpcNode = network.nodos.find((node) => node.type === "rpc");
+      if (!rpcNode) {
+        return res.status(404).json({ error: "Nodo RPC no encontrado" });
+      }
+
+      // Construir la URL del nodo RPC (suponiendo que el puerto está en el nodo)
+      const rpcUrl = `http://localhost:${rpcNode.port}`;
+
+      // Construir la transacción usando los valores recibidos
+      const transactionData = {
+        jsonrpc: "2.0",
+        method: "eth_sendTransaction",
+        params: [
+          {
+            from: "0xb60e8dd61c5d32be8058bb8eb970870f07233155", // Dirección de origen (puedes ajustarla según el caso)
+            to: to, // Dirección de destino desde el cuerpo de la solicitud
+            gas: "0x76c0",
+            gasPrice: "0x9184e72a000",
+            value: value, // Valor de la transacción desde el cuerpo de la solicitud
+            data: "0xd46e8dd67c5d32be8d46e8dd67c5d32be8058bb8eb970870f072445675058bb8eb970870f072445675", // Datos de la transacción
+          },
+        ],
+        id: 1,
+      };
+
+      // Enviar la transacción al nodo RPC
+      const response = await axios.post(rpcUrl, transactionData);
+
+      // Enviar la respuesta de la transacción
+      res.status(200).json({
+        message: "Transacción enviada correctamente.",
+        transactionHash: response.data.result,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Error al procesar la transacción" });
     }
   },
 };

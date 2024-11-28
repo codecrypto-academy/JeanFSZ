@@ -4,6 +4,7 @@ import { Allocation, NetworkConfig, Node } from "../../interfaces/interfaces";
 import { createCuentaBootnode } from "./account.utils";
 import logger from "../../utils/logger";
 import { execSync } from "child_process";
+import { ethers } from "ethers";
 
 /**
  * Obtiene el path de la red basado en el nombre de la red y la estructura base.
@@ -75,7 +76,6 @@ function createNodeConfig(node: Node, networkName: string): string {
       - geth-bootnode
     networks:
       ${networkName}:
-        name: ${networkName}
         ipv4_address: ${node.ip}
     entrypoint: sh -c 'geth init /root/genesis.json && geth --bootnodes="\${BOOTNODE}" --nat "extip:${node.ip}" --netrestrict=\${SUBNET}'
   `;
@@ -140,16 +140,16 @@ export async function generateDockerComposeFile(
 function prepareAllocations(
   mainAddress: string,
   allocConfig: Allocation[]
-): { [address: string]: { balance: string } } {
-  const alloc: { [address: string]: { balance: string } } = {};
+): { [address: string]: { balance: bigint } } {
+  const alloc: { [address: string]: { balance: bigint } } = {};
 
   // Incluir el balance predeterminado para la dirección principal si no está ya en la lista
-  alloc[mainAddress] = { balance: "20" };
+  alloc[mainAddress] = { balance: BigInt(300000000000000000000) };
 
   // Añadir las direcciones y balances desde la configuración
   allocConfig.forEach((allocation) => {
     alloc[allocation.address] = {
-      balance: allocation.amount.toString(10), // Convertir balance a decimal
+      balance: ethers.parseEther(allocation.amount.toString()), // Convertir balance a decimal
     };
   });
 
@@ -203,7 +203,12 @@ export function generateGenesisFile(networkConfig: NetworkConfig): void {
 
   // Escribir el archivo `genesis.json`
   const genesisPath = path.join(networkDir, "genesis.json");
-  fs.writeFileSync(genesisPath, JSON.stringify(genesis, null, 2), "utf-8");
-
+  fs.writeFileSync(
+    genesisPath,
+    JSON.stringify(genesis, (key, value) =>
+      typeof value === "bigint" ? value.toString() : value
+    ),
+    "utf-8"
+  );
   console.info(`Archivo genesis.json creado en: ${genesisPath}`);
 }
